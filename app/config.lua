@@ -2,6 +2,14 @@
 local config = require("lapis.config")
 
 config({"development", "production"}, {
+  greeting = "greeting from config",
+--  host = "example.com",
+--  email_enabled = false,
+--  postgres = {
+--    host = "localhost",
+--    port = "5432",
+--    database = "my_app"
+--  }
   app_url = os.getenv("APP_URL") or "http://localhost:8080",
   github = {
     client_id = os.getenv("GITHUB_CLIENT_ID"),
@@ -22,6 +30,11 @@ config("development", {
 })
 
 config("production", {
+--  email_enabled = true,
+--  postgres = {
+--    database = "my_app_prod"
+--  }
+  num_workers = 4,
   port = 8080,
   code_cache = "on"
 })

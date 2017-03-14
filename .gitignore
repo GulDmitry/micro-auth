@@ -19,6 +19,7 @@ diff
 .tmproj
 nbproject
 Thumbs.db
+.idea
 
 # Lua specific files
 app/*_temp/
