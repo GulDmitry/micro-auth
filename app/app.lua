@@ -1,29 +1,30 @@
 local lapis = require("lapis")
-local config = require("lapis.config").get()
 local util = require("lapis.util")
 
 local github = require("github")
 local google = require("google")
+local localAuth = require("local")
 
 local app = lapis.Application()
+local app_helpers = require("lapis.application")
+
 app:enable("etlua")
 app.layout = require "views.layout"
 
-app.handle_404 = function(self)
-  print("Handle 404")
---  error("Failed to find route: " .. self.req.cmd_url)
--- To make this work comment the `default_route`
-  return { status = 404, layout = false, "Not Found!" }
-end
+-- Called before every action.
+app:before_filter(function(self)
+  -- JWT or OAuth token.
+  -- TODO: specific check.
+  if self.session.token and localAuth.verify(self.session.token) then
+    -- TODO: remove
+    print("SESSION_TOKEN: " .. self.session.token)
+    self.logged = true
+  end
+end)
 
 app.default_route = function(self)
-  print("Default Route")
-
   -- strip trailing /
   if self.req.parsed_url.path:match("./$") then
-
-    --    print(util.to_json(self.req.parsed_url))
-
     local stripped = self.req.parsed_url.path:match("^(.+)/+$")
     return {
       redirect_to = self:build_url(stripped, {
@@ -32,9 +33,10 @@ app.default_route = function(self)
       })
     }
   end
-
   self.app.handle_404(self)
 end
+
+app:match("index", "/", function() return { render = "index" } end)
 
 -- Github authorization
 app:get("/auth/github", github.authorize)
@@ -44,45 +46,24 @@ app:get("/auth/github/callback", github.callback)
 app:get("/auth/google", google.authorize)
 app:get("/auth/google/callback", google.callback)
 
---- -Before every action, can be multiply
--- app:before_filter(function(self)
--- if self.session.user then
--- self.current_user = load_user(self.session.user)
--- end
--- if not user_meets_requirements() then
--- -- Interrupt the method
--- self:write({redirect_to = self:url_for("login")})
--- end
--- end)
+-- Local authorization
+app:match("local-auth", "/auth/local", app_helpers.respond_to({
+  before = function(self)
+    if self.session.token and localAuth.verify(self.session.token) then
+      self:write({ redirect_to = self:url_for("index") })
+    end
+  end,
+  GET = function()
+    return { render = "signin" }
+  end,
+  -- TODO: error message if the method cannot find a user.
+  POST = localAuth.authorize
+}))
 
--- Routes. app:delete/put/post
--- self. parameters http://leafo.net/lapis/reference/actions.html
-
-app:match("index", "/", function(self)
-  --  return config.greeting .. "Welcome to Lapis " .. require("lapis.version")
-
-  self.my_favorite_things = {
-    "Cats",
-    "Horses",
-    "Skateboards"
-  }
-  --  return { render = "index" }
-end)
-
---app:match("create_account", "/create-account", respond_to({
---  before = function(self)
---    self.user = Users:find(self.params.id)
---    if not self.user then
---      self:write({"Not Found", status = 404})
---    end
---  end,
---  GET = function(self)
---    return { render = true }
---  end,
---  POST = function(self)
---    do_something(self.params)
---    return { redirect_to = self:url_for("index") }
---  end
---}))
+app.handle_404 = function(self)
+  error("Failed to find route: " .. self.req.cmd_url)
+  -- To make this work comment the `default_route`
+  --  return { status = 404, layout = false, "Not Found!" }
+end
 
 return app
