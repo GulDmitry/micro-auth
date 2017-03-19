@@ -2,7 +2,6 @@
 local config = require("lapis.config")
 
 config({"development", "production"}, {
-  greeting = "greeting from config",
   secret = os.getenv("SECRET") or config.secret,
   app_url = os.getenv("APP_URL") or "http://localhost:8080",
   github = {

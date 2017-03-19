@@ -1,7 +1,6 @@
 local Template = require ('pl.text').Template
 local util = require("lapis.util")
 
-
 local _M = {}
 
 function _M.createRedirectHTML(url, data)
