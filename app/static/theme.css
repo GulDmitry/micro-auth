@@ -48,3 +48,8 @@ div .center-block {
     border-top-left-radius: 0;
     border-top-right-radius: 0;
 }
+
+pre {
+    white-space: pre-wrap;
+    word-break: normal;
+}

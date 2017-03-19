@@ -16,8 +16,8 @@ app:before_filter(function(self)
   -- JWT or OAuth token.
   -- TODO: specific check.
   if self.session.token and localAuth.verify(self.session.token) then
-    -- TODO: remove
-    print("SESSION_TOKEN: " .. self.session.token)
+    -- TODO: implement
+    self.jwt_token = {}
     self.logged = true
   end
 end)
@@ -37,6 +37,11 @@ app.default_route = function(self)
 end
 
 app:match("index", "/", function() return { render = "index" } end)
+
+-- TODO: get payload from every auth strategy
+-- convert it to the jwt
+-- store the token as a base64 cookie
+-- in the `before_filter` check the cookie and show the json.
 
 -- Github authorization
 app:get("/auth/github", github.authorize)
