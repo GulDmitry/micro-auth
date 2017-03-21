@@ -1,24 +1,27 @@
 local lapis = require("lapis")
-local util = require("lapis.util")
+local utils = require "utils"
+local lapis_util = require "lapis.util"
 
 local github = require("github")
 local google = require("google")
 local localAuth = require("local")
 
 local app = lapis.Application()
-local app_helpers = require("lapis.application")
+local app_helpers = require "lapis.application"
 
 app:enable("etlua")
 app.layout = require "views.layout"
 
+-- TODO: logout
+
 -- Called before every action.
 app:before_filter(function(self)
-  -- JWT or OAuth token.
-  -- TODO: specific check.
-  if self.session.token and localAuth.verify(self.session.token) then
-    -- TODO: implement
-    self.jwt_token = {}
-    self.logged = true
+  -- JWT token.
+  if self.session.token then
+    local token = utils.decodeJWT(self.session.token)
+    if token ~= nil then
+      self.jwt_token = lapis_util.to_json(token)
+    end
   end
 end)
 
@@ -54,15 +57,27 @@ app:get("/auth/google/callback", google.callback)
 -- Local authorization
 app:match("local-auth", "/auth/local", app_helpers.respond_to({
   before = function(self)
-    if self.session.token and localAuth.verify(self.session.token) then
+    if self.session.token and utils.decodeJWT(self.session.token) then
       self:write({ redirect_to = self:url_for("index") })
     end
   end,
   GET = function()
     return { render = "signin" }
   end,
-  -- TODO: error message if the method cannot find a user.
-  POST = localAuth.authorize
+  POST = function(self)
+    local user = localAuth.authorize(self);
+    if user == nil then
+      -- TODO: error message if the method cannot find a user.
+      return
+    end
+
+    local jwt_token = utils.encodeJWT(user)
+    self.session.token = jwt_token
+
+--    Does NOT change the url
+--    return { render = "index" }
+    self:write({ redirect_to = self:url_for("index") })
+  end
 }))
 
 app.handle_404 = function(self)
