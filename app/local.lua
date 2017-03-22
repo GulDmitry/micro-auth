@@ -1,4 +1,3 @@
-local lapis_util = require "lapis.util"
 local cjson = require "cjson"
 
 local _M = {}

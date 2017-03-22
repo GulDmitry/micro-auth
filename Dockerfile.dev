@@ -11,6 +11,7 @@ RUN /usr/local/openresty/luajit/bin/luarocks install luasec
 RUN /usr/local/openresty/luajit/bin/luarocks install lapis
 RUN /usr/local/openresty/luajit/bin/luarocks install penlight
 RUN /usr/local/openresty/luajit/bin/luarocks install lua-resty-jwt
+RUN /usr/local/openresty/luajit/bin/luarocks install lua-resty-cookie
 
 RUN mkdir /app
 

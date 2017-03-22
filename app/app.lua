@@ -1,6 +1,8 @@
 local lapis = require("lapis")
 local utils = require "utils"
 local lapis_util = require "lapis.util"
+local date = require "date"
+local ck = require "resty.cookie"
 
 local github = require("github")
 local google = require("google")
@@ -12,16 +14,18 @@ local app_helpers = require "lapis.application"
 app:enable("etlua")
 app.layout = require "views.layout"
 
--- TODO: logout
+app.cookie_attributes = function()
+  local expires = date(true):adddays(10):fmt("${http}")
+  return "Expires=" .. expires .. "; Path=/; HttpOnly"
+end
 
 -- Called before every action.
 app:before_filter(function(self)
-  -- JWT token.
-  if self.session.token then
-    local token = utils.decodeJWT(self.session.token)
-    if token ~= nil then
-      self.jwt_token = lapis_util.to_json(token)
-    end
+  local pathsToStop = {};
+  pathsToStop[self:url_for("index")] = true
+  pathsToStop[self:url_for("logout")] = true
+  if self.cookies.jwt_token and not pathsToStop[self.req.parsed_url.path] then
+    self:write({ redirect_to = self:url_for("index") })
   end
 end)
 
@@ -39,7 +43,16 @@ app.default_route = function(self)
   self.app.handle_404(self)
 end
 
-app:match("index", "/", function() return { render = "index" } end)
+app:match("index", "/", function(self)
+  print(self.cookies.jwt_token)
+  if self.cookies.jwt_token then
+    local token = utils.decodeJWT(self.cookies.jwt_token)
+    if token ~= nil then
+      self.jwt_token = lapis_util.to_json(token)
+    end
+  end
+  return { render = "index" }
+end)
 
 -- TODO: get payload from every auth strategy
 -- convert it to the jwt
@@ -56,10 +69,8 @@ app:get("/auth/google/callback", google.callback)
 
 -- Local authorization
 app:match("local-auth", "/auth/local", app_helpers.respond_to({
-  before = function(self)
-    if self.session.token and utils.decodeJWT(self.session.token) then
-      self:write({ redirect_to = self:url_for("index") })
-    end
+  before = function()
+    print('====================')
   end,
   GET = function()
     return { render = "signin" }
@@ -72,13 +83,24 @@ app:match("local-auth", "/auth/local", app_helpers.respond_to({
     end
 
     local jwt_token = utils.encodeJWT(user)
-    self.session.token = jwt_token
+    self.cookies.jwt_token = jwt_token
 
---    Does NOT change the url
---    return { render = "index" }
-    self:write({ redirect_to = self:url_for("index") })
+    -- Does NOT change the url
+    -- return { render = "index" }
+    return { redirect_to = self:url_for("index") }
   end
 }))
+
+app:match("logout", "/logout", function(self)
+  local cookie = ck:new()
+  -- Expire.
+  cookie:set({
+    key = "jwt_token",
+    value = "",
+    expires = date(true)
+  })
+  return { redirect_to = self:url_for("index") }
+end)
 
 app.handle_404 = function(self)
   error("Failed to find route: " .. self.req.cmd_url)

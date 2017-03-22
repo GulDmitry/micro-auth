@@ -29,8 +29,7 @@ function _M.encodeJWT(data)
     iss = issuer, -- Issuer.
     iat = iat, -- Issued at.
     nbf = nbf, -- Not before.
---    exp = nbf + 60 * 60 * 24 * 10 -- Expire. 10 days.
-    exp = nbf + 20
+    exp = nbf + 60 * 60 * 24 * 10 -- Expire. 10 days.
   }
 
   return jwt:sign(config.secret,
