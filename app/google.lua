@@ -54,9 +54,13 @@ function _M.callback(self)
     local resp = {
       access_token = data.access_token,
       refresh_token = data.refresh_token,
-      expires_in = data.expires_in
+      expires_in = data.expires_in,
+      bearer = "google"
     }
-    return {utils.createRedirectHTML(config.google.redirect_uri, resp), status = 200}
+    local jwt_token = utils.encodeJWT(resp)
+    self.cookies.jwt_token = jwt_token
+
+    return { utils.createRedirectHTML(config.google.redirect_uri, { access_token = jwt_token }), status = 200 }
   elseif status_code == 500 then
     return {utils.createRedirectHTML(config.google.redirect_uri, { error = "Google server error" }), status = 500}
   else

@@ -10,6 +10,10 @@ local _M = {}
 local issuer = "micro-auth"
 
 function _M.createRedirectHTML(url, data)
+  if url == "" or url == nil then
+    url = "/"
+  end
+
   local htmlTemplate = [[<!DOCTYPE html>
           <meta charset=utf-8>
           <title>Redirecting…</title>

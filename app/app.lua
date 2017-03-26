@@ -1,6 +1,7 @@
 local lapis = require("lapis")
 local utils = require "utils"
 local lapis_util = require "lapis.util"
+local config = require("lapis.config").get()
 local date = require "date"
 local ck = require "resty.cookie"
 
@@ -44,7 +45,6 @@ app.default_route = function(self)
 end
 
 app:match("index", "/", function(self)
-  print(self.cookies.jwt_token)
   if self.cookies.jwt_token then
     local token = utils.decodeJWT(self.cookies.jwt_token)
     if token ~= nil then
@@ -53,11 +53,6 @@ app:match("index", "/", function(self)
   end
   return { render = "index" }
 end)
-
--- TODO: get payload from every auth strategy
--- convert it to the jwt
--- store the token as a base64 cookie
--- in the `before_filter` check the cookie and show the json.
 
 -- Github authorization
 app:get("/auth/github", github.authorize)
@@ -69,9 +64,7 @@ app:get("/auth/google/callback", google.callback)
 
 -- Local authorization
 app:match("local-auth", "/auth/local", app_helpers.respond_to({
-  before = function()
-    print('====================')
-  end,
+  before = function() end,
   GET = function()
     return { render = "signin" }
   end,
@@ -82,12 +75,16 @@ app:match("local-auth", "/auth/local", app_helpers.respond_to({
       return
     end
 
-    local jwt_token = utils.encodeJWT(user)
+    local jwt_token = utils.encodeJWT({
+      bearer = "local",
+      user = user
+    })
     self.cookies.jwt_token = jwt_token
 
-    -- Does NOT change the url
-    -- return { render = "index" }
-    return { redirect_to = self:url_for("index") }
+    return {
+      utils.createRedirectHTML(config.local_auth.redirect_uri, { access_token = jwt_token }),
+      status = 200
+    }
   end
 }))
 

@@ -11,9 +11,6 @@ local fixtures = {
 function _M.authorize(self)
   local user;
 
-  -- TODO: remove
-  print(cjson.encode(self.params))
-
   for _, v in pairs(fixtures) do
     if (v.email == self.params.email and v.password == self.params.password) then
       user = v

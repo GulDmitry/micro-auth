@@ -50,7 +50,13 @@ function _M.callback(self)
       return { utils.createRedirectHTML(config.github.redirect_uri, { error = data.error_description }), status = 401 }
     end
 
-    return { utils.createRedirectHTML(config.github.redirect_uri, { access_token = data.access_token }), status = 200 }
+    local jwt_token = utils.encodeJWT({
+      bearer = "github",
+      access_token = data.access_token
+    })
+    self.cookies.jwt_token = jwt_token
+
+    return { utils.createRedirectHTML(config.github.redirect_uri, { access_token = jwt_token }), status = 200 }
   elseif status_code == 500 then
     return { utils.createRedirectHTML(config.github.redirect_uri, { error = "Github server error" }), status = 500 }
   else
