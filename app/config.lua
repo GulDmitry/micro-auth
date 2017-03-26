@@ -14,6 +14,9 @@ config({"development", "production"}, {
     client_secret = os.getenv("GOOGLE_CLIENT_SECRET"),
     redirect_uri = os.getenv("GOOGLE_REDIRECT_URL"),
     scope = os.getenv("GOOGLE_SCOPE") or "https://www.googleapis.com/auth/plus.me"
+  },
+  local_auth = {
+    redirect_uri = os.getenv("LOCAL_REDIRECT_URL"),
   }
 })
 

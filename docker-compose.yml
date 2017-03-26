@@ -12,5 +12,6 @@ services:
         - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
         - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
         - GOOGLE_REDIRECT_URL=${GOOGLE_REDIRECT_URL}
+        - LOCAL_REDIRECT_URL=${LOCAL_REDIRECT_URL}
         - SECRET=${SECRET}
     command: server production
